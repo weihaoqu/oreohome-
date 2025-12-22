@@ -1,0 +1,8 @@
+{
+  "name": "HomeSync - Hello Kitty Inventory",
+  "description": "A smart, bilingual home storage and inventory management system with AI voice and photo recognition.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
