@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { InventoryState, Location, Container, InventoryItem, User, Language } from '../types';
+import { InventoryState, Location, Container, InventoryItem, User, Language, AIModel, PromptHistoryEntry, DevPrompt } from '../types';
 
 interface InventoryContextType {
   state: InventoryState;
   lang: Language;
   setLang: (l: Language) => void;
+  setSelectedModel: (m: AIModel) => void;
   addLocation: (l: Omit<Location, 'id'>) => void;
   updateLocation: (id: string, l: Partial<Location>) => void;
   addContainer: (c: Omit<Container, 'id'>) => void;
@@ -14,9 +15,51 @@ interface InventoryContextType {
   updateItem: (id: string, i: Partial<InventoryItem>) => void;
   deleteItem: (id: string) => void;
   adjustQuantity: (id: string, delta: number) => void;
+  addPromptHistory: (entry: Omit<PromptHistoryEntry, 'id' | 'timestamp'>) => void;
+  clearPromptHistory: () => void;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
+
+// 详细记录自项目开始以来的所有原始 Prompt
+const INITIAL_DEV_PROMPTS: DevPrompt[] = [
+  {
+    id: 'p1',
+    timestamp: 1715000000000,
+    version: '1.0',
+    content: "You are a senior full-stack engineer and product designer. I want to build a bilingual (Chinese + English) web app for home inventory management. The theme should be 'Hello Kitty' style (pink, cute, high aesthetics). Use Gemini API for AI-powered features like voice/photo recognition."
+  },
+  {
+    id: 'p2',
+    timestamp: 1715001000000,
+    version: '1.1',
+    content: "In the LocationFormPage, add file upload support for location photos in addition to camera capture. Updated UI to allow users to choose between taking a photo or uploading one from their gallery."
+  },
+  {
+    id: 'p3',
+    timestamp: 1715002000000,
+    version: '1.2',
+    content: "In the ItemFormPage, add a clear UI element (e.g., a dropdown or segmented control) that allows users to switch between 'gemini-2.5-flash' and 'gemini-3-flash-preview' AI models. This should be accessible before initiating an AI-powered action like voice or photo recognition."
+  },
+  {
+    id: 'p4',
+    timestamp: 1715003000000,
+    version: '1.3',
+    content: "add a button for prompt history, track all the prompts I asked so far."
+  },
+  {
+    id: 'p5',
+    timestamp: 1715004000000,
+    version: '1.4',
+    content: "the prompt history 是我从头开始构建这个app，问的所有的prompt的历史记录。"
+  },
+  {
+    id: 'p6',
+    timestamp: 1715005000000,
+    version: '1.5',
+    content: "更细节的prompt history，包含了所有我问的prompt"
+  }
+];
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lang, setLang] = useState<Language>(() => {
@@ -26,7 +69,14 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [state, setState] = useState<InventoryState>(() => {
     const saved = localStorage.getItem('homesync_state');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (!parsed.selectedModel) parsed.selectedModel = 'gemini-3-flash-preview';
+      if (!parsed.promptHistory) parsed.promptHistory = [];
+      // 始终同步最完整的开发历史记录
+      parsed.developmentPrompts = INITIAL_DEV_PROMPTS;
+      return parsed;
+    }
     return {
       locations: [
         { id: '1', name: '玄关柜', description: '入户门旁边的柜子' },
@@ -44,7 +94,10 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         { id: 'u1', name: '管理员', avatar: 'https://picsum.photos/seed/admin/100' },
         { id: 'u2', name: '家庭成员', avatar: 'https://picsum.photos/seed/fam/100' }
       ],
-      currentUserId: 'u1'
+      currentUserId: 'u1',
+      selectedModel: 'gemini-3-flash-preview',
+      promptHistory: [],
+      developmentPrompts: INITIAL_DEV_PROMPTS
     };
   });
 
@@ -55,6 +108,10 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('homesync_lang', lang);
   }, [lang]);
+
+  const setSelectedModel = (m: AIModel) => {
+    setState(prev => ({ ...prev, selectedModel: m }));
+  };
 
   const addLocation = (l: Omit<Location, 'id'>) => {
     setState(prev => ({
@@ -114,9 +171,27 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   };
 
+  const addPromptHistory = (entry: Omit<PromptHistoryEntry, 'id' | 'timestamp'>) => {
+    setState(prev => ({
+      ...prev,
+      promptHistory: [
+        {
+          ...entry,
+          id: Math.random().toString(36).substr(2, 9),
+          timestamp: Date.now()
+        },
+        ...prev.promptHistory
+      ].slice(0, 100)
+    }));
+  };
+
+  const clearPromptHistory = () => {
+    setState(prev => ({ ...prev, promptHistory: [] }));
+  };
+
   return (
     <InventoryContext.Provider value={{ 
-      state, lang, setLang, addLocation, updateLocation, addContainer, updateContainer, addItem, updateItem, deleteItem, adjustQuantity 
+      state, lang, setLang, setSelectedModel, addLocation, updateLocation, addContainer, updateContainer, addItem, updateItem, deleteItem, adjustQuantity, addPromptHistory, clearPromptHistory
     }}>
       {children}
     </InventoryContext.Provider>

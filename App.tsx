@@ -11,6 +11,7 @@ import SearchPage from './pages/SearchPage';
 import SharePage from './pages/SharePage';
 import VisualSummaryPage from './pages/VisualSummaryPage';
 import BatchScanPage from './pages/BatchScanPage';
+import PromptHistoryPage from './pages/PromptHistoryPage';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +29,7 @@ const App: React.FC = () => {
             <Route path="/item/edit/:id" element={<ItemFormPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/share" element={<SharePage />} />
+            <Route path="/history" element={<PromptHistoryPage />} />
           </Routes>
         </Layout>
       </Router>

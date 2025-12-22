@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Users, Globe, Heart, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Home, Search, Users, Globe, Heart, Sparkles, Image as ImageIcon, ClipboardList } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 
@@ -13,6 +13,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/', icon: Home, label: t('home', lang) },
     { path: '/visuals', icon: Sparkles, label: t('visuals', lang) },
     { path: '/search', icon: Search, label: t('search', lang) },
+    { path: '/history', icon: ClipboardList, label: t('promptHistory', lang) },
     { path: '/share', icon: Users, label: t('share', lang) },
   ];
 
@@ -72,7 +73,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 flex justify-around py-3 z-50 rounded-t-3xl shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 flex justify-around py-3 z-50 rounded-t-3xl shadow-lg px-2">
         {navItems.map((item) => (
           <Link
             key={item.path}
@@ -81,8 +82,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               location.pathname === item.path ? 'text-pink-600 scale-110' : 'text-pink-200'
             }`}
           >
-            <item.icon size={24} />
-            <span className="text-[10px] uppercase font-black tracking-wider">{item.label}</span>
+            <item.icon size={22} />
+            <span className="text-[8px] uppercase font-black tracking-wider text-center">{item.label}</span>
           </Link>
         ))}
       </nav>

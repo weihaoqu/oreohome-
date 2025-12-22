@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Save, MapPin, Heart, Camera, X, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Save, MapPin, Heart, Camera, X, RotateCcw, Upload, Image as ImageIcon } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 
@@ -19,6 +19,16 @@ const LocationFormPage: React.FC = () => {
 
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -37,11 +47,20 @@ const LocationFormPage: React.FC = () => {
     setShowCamera(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      currentStreamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("Camera access denied", err);
       setShowCamera(false);
     }
+  };
+
+  const stopCamera = () => {
+    if (currentStreamRef.current) {
+      currentStreamRef.current.getTracks().forEach(track => track.stop());
+      currentStreamRef.current = null;
+    }
+    setShowCamera(false);
   };
 
   const handleCapture = () => {
@@ -53,10 +72,18 @@ const LocationFormPage: React.FC = () => {
       ctx?.drawImage(videoRef.current, 0, 0);
       const dataUrl = canvas.toDataURL('image/jpeg');
       setFormData(prev => ({ ...prev, photoUrl: dataUrl }));
-      
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      setShowCamera(false);
+      stopCamera();
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, photoUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -90,7 +117,7 @@ const LocationFormPage: React.FC = () => {
              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
           </div>
           <div className="mt-8 flex gap-6">
-             <button onClick={() => setShowCamera(false)} className="w-16 h-16 bg-white/20 text-white rounded-full flex items-center justify-center">
+             <button onClick={stopCamera} className="w-16 h-16 bg-white/20 text-white rounded-full flex items-center justify-center">
                 <X size={32} />
              </button>
              <button onClick={handleCapture} className="w-20 h-20 bg-pink-500 text-white rounded-full flex items-center justify-center border-4 border-white shadow-xl scale-110">
@@ -103,29 +130,60 @@ const LocationFormPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[2.5rem] border-2 border-pink-100 shadow-xl shadow-pink-100/50 space-y-6">
         {/* Photo Section */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-full h-48 bg-pink-50 rounded-3xl overflow-hidden border-2 border-dashed border-pink-200 flex items-center justify-center group">
+          <div className="relative w-full h-64 bg-pink-50 rounded-[2.5rem] overflow-hidden border-2 border-dashed border-pink-200 flex items-center justify-center group shadow-inner">
             {formData.photoUrl ? (
               <>
                 <img src={formData.photoUrl} alt="Location" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                  <button 
+                    type="button" 
+                    onClick={handleStartCamera}
+                    className="w-14 h-14 bg-white text-pink-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                    title={t('takePhoto', lang)}
+                  >
+                    <Camera size={24} />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-14 h-14 bg-white text-pink-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                    title={lang === 'zh' ? '从相册上传' : 'Upload from gallery'}
+                  >
+                    <Upload size={24} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-6">
                 <button 
                   type="button" 
                   onClick={handleStartCamera}
-                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2 font-black"
+                  className="flex flex-col items-center gap-2 text-pink-300 hover:text-pink-500 transition-colors"
                 >
-                  <RotateCcw size={32} />
-                  {t('changePhoto', lang)}
+                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm border border-pink-100">
+                    <Camera size={40} />
+                  </div>
+                  <span className="font-black text-xs uppercase tracking-widest">{t('takePhoto', lang)}</span>
                 </button>
-              </>
-            ) : (
-              <button 
-                type="button" 
-                onClick={handleStartCamera}
-                className="flex flex-col items-center gap-2 text-pink-300 hover:text-pink-500 transition-colors"
-              >
-                <Camera size={48} />
-                <span className="font-black">{t('takePhoto', lang)}</span>
-              </button>
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center gap-2 text-pink-300 hover:text-pink-500 transition-colors"
+                >
+                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm border border-pink-100">
+                    <Upload size={40} />
+                  </div>
+                  <span className="font-black text-xs uppercase tracking-widest">{lang === 'zh' ? '相册上传' : 'Upload'}</span>
+                </button>
+              </div>
             )}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleFileUpload} 
+            />
           </div>
         </div>
 

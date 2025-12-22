@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Plus, Package, Minus, Trash2, Edit, ChevronLeft, LayoutGrid, Camera, X, ScanSearch } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
@@ -14,10 +14,19 @@ const LocationDetailPage: React.FC = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [activeContainerId, setActiveContainerId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const currentStreamRef = useRef<MediaStream | null>(null);
 
   const location = state.locations.find(l => l.id === id);
   const items = state.items.filter(i => i.locationId === id);
   const containers = state.containers.filter(c => c.locationId === id);
+
+  useEffect(() => {
+    return () => {
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   if (!location) return <div>Location not found</div>;
 
@@ -35,11 +44,21 @@ const LocationDetailPage: React.FC = () => {
     setShowCamera(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      currentStreamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       console.error(err);
       setShowCamera(false);
     }
+  };
+
+  const stopCamera = () => {
+    if (currentStreamRef.current) {
+      currentStreamRef.current.getTracks().forEach(t => t.stop());
+      currentStreamRef.current = null;
+    }
+    setShowCamera(false);
+    setActiveContainerId(null);
   };
 
   const capturePhoto = () => {
@@ -52,11 +71,7 @@ const LocationDetailPage: React.FC = () => {
       const dataUrl = canvas.toDataURL('image/jpeg');
       
       updateContainer(activeContainerId, { photoUrl: dataUrl });
-      
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(t => t.stop());
-      setShowCamera(false);
-      setActiveContainerId(null);
+      stopCamera();
     }
   };
 
@@ -107,7 +122,7 @@ const LocationDetailPage: React.FC = () => {
              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
           </div>
           <div className="mt-8 flex gap-6">
-             <button onClick={() => setShowCamera(false)} className="w-16 h-16 bg-white/20 text-white rounded-full flex items-center justify-center">
+             <button onClick={stopCamera} className="w-16 h-16 bg-white/20 text-white rounded-full flex items-center justify-center">
                 <X size={32} />
              </button>
              <button onClick={capturePhoto} className="w-20 h-20 bg-pink-500 text-white rounded-full flex items-center justify-center border-4 border-white shadow-xl scale-110">

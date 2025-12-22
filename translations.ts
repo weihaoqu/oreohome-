@@ -61,7 +61,23 @@ export const translations = {
     confirmAndAdd: "Confirm & Add All",
     scanningShelf: "Scanning items...",
     scanTip: "Take a clear photo of your shelf to identify everything inside!",
-    noItemsDetected: "No items detected. Try another photo."
+    noItemsDetected: "No items detected. Try another photo.",
+    maxItemsLimit: "Max Items to Detect",
+    aiDrafts: "AI Drafts Found",
+    clickToFill: "Click to fill form",
+    quickAdd: "Quick Add",
+    addAllIdentified: "Add All Identified",
+    clearQueue: "Clear Queue",
+    aiEngine: "AI Engine",
+    switchModel: "Switch Engine",
+    modelFlashDesc: "Balanced speed & efficiency",
+    modelFlash3Desc: "Advanced reasoning & accuracy",
+    promptHistory: "Prompt History",
+    appLogs: "App AI Logs",
+    devHistory: "Development History",
+    noHistory: "No history yet",
+    clearHistory: "Clear Logs",
+    devStep: "Development Step"
   },
   zh: {
     appName: "家存",
@@ -122,7 +138,23 @@ export const translations = {
     confirmAndAdd: "确认并添加全部",
     scanningShelf: "正在扫描所有物品...",
     scanTip: "对着柜子拍张清晰的照片，AI 会自动帮你识别出所有东西！",
-    noItemsDetected: "未识别到物品，请换个角度再试一次。"
+    noItemsDetected: "未识别到物品，请换个角度再试一次。",
+    maxItemsLimit: "单次识别上限",
+    aiDrafts: "AI 识别到多件物品",
+    clickToFill: "点击填入表单",
+    quickAdd: "快速录入",
+    addAllIdentified: "一键全部录入",
+    clearQueue: "清空待办",
+    aiEngine: "AI 引擎",
+    switchModel: "切换引擎",
+    modelFlashDesc: "速度与识别率均衡",
+    modelFlash3Desc: "更强的逻辑与识别精度",
+    promptHistory: "提示词历史",
+    appLogs: "应用 AI 日志",
+    devHistory: "开发建设记录",
+    noHistory: "暂无历史",
+    clearHistory: "清空日志",
+    devStep: "开发步骤"
   }
 };
 

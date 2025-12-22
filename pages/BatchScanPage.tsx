@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Camera, X, Sparkles, Plus, Minus, Trash2, Heart, LayoutGrid, ListPlus, CheckCircle2, Info, Upload, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Camera, X, Sparkles, Plus, Minus, Trash2, Heart, LayoutGrid, ListPlus, CheckCircle2, Info, Upload, Image as ImageIcon, Settings2 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -17,7 +17,7 @@ interface DetectedItem {
 const BatchScanPage: React.FC = () => {
   const { locationId } = useParams<{ locationId: string }>();
   const navigate = useNavigate();
-  const { state, lang, addItem } = useInventory();
+  const { state, lang, addItem, setSelectedModel } = useInventory();
 
   const [showCamera, setShowCamera] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,16 +26,34 @@ const BatchScanPage: React.FC = () => {
   const [globalContainerId, setGlobalContainerId] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const startCamera = async () => {
     setShowCamera(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      currentStreamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       console.error(err);
       setShowCamera(false);
     }
+  };
+
+  const stopCamera = () => {
+    if (currentStreamRef.current) {
+      currentStreamRef.current.getTracks().forEach(t => t.stop());
+      currentStreamRef.current = null;
+    }
+    setShowCamera(false);
   };
 
   const handleCapture = async () => {
@@ -48,10 +66,7 @@ const BatchScanPage: React.FC = () => {
       const dataUrl = canvas.toDataURL('image/jpeg');
       setCapturedImage(dataUrl);
       
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(t => t.stop());
-      setShowCamera(false);
-
+      stopCamera();
       processImage(dataUrl);
     }
   };
@@ -75,6 +90,7 @@ const BatchScanPage: React.FC = () => {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const currentModel = state.selectedModel;
       
       const prompt = `你是一个极度细致的家庭仓储管理员。请识别图片中所有的物品。
       要求：
@@ -90,7 +106,7 @@ const BatchScanPage: React.FC = () => {
       "unit" (string: 单位)。`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: currentModel,
         contents: [
           { text: prompt },
           { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
@@ -183,6 +199,30 @@ const BatchScanPage: React.FC = () => {
         )}
       </header>
 
+      {/* Model Engine Switcher for Batch Scan */}
+      {!loading && items.length === 0 && !capturedImage && (
+        <div className="flex items-center justify-center gap-4 bg-white p-4 rounded-3xl border-2 border-pink-50 shadow-sm">
+            <span className="text-xs font-black text-pink-400 uppercase tracking-widest flex items-center gap-2">
+                <Settings2 size={16} />
+                {t('aiEngine', lang)}:
+            </span>
+            <div className="flex bg-pink-50 p-1 rounded-2xl border border-pink-100">
+                <button 
+                onClick={() => setSelectedModel('gemini-2.5-flash')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all ${state.selectedModel === 'gemini-2.5-flash' ? 'bg-pink-500 text-white shadow-md' : 'text-pink-300'}`}
+                >
+                2.5 Flash
+                </button>
+                <button 
+                onClick={() => setSelectedModel('gemini-3-flash-preview')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all ${state.selectedModel === 'gemini-3-flash-preview' ? 'bg-pink-500 text-white shadow-md' : 'text-pink-300'}`}
+                >
+                3.0 Flash
+                </button>
+            </div>
+        </div>
+      )}
+
       {showCamera && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6">
           <div className="relative w-full max-w-md aspect-square bg-slate-900 rounded-[3rem] overflow-hidden border-4 border-pink-300 shadow-2xl">
@@ -193,7 +233,7 @@ const BatchScanPage: React.FC = () => {
              </div>
           </div>
           <div className="mt-8 flex gap-6">
-             <button onClick={() => setShowCamera(false)} className="w-16 h-16 bg-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md border border-white/20">
+             <button onClick={stopCamera} className="w-16 h-16 bg-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md border border-white/20">
                 <X size={32} />
              </button>
              <button onClick={handleCapture} className="w-20 h-20 bg-pink-500 text-white rounded-full flex items-center justify-center border-4 border-white shadow-2xl scale-110 active:scale-90 transition-all">
@@ -256,6 +296,7 @@ const BatchScanPage: React.FC = () => {
            <div className="text-center space-y-2">
              <p className="text-2xl font-black text-pink-500">{t('scanningShelf', lang)}</p>
              <p className="text-pink-300 font-bold italic animate-pulse">正在深度分析每一个物品的品牌与规格...</p>
+             <p className="text-xs text-pink-200 font-black uppercase tracking-tighter mt-2">Using {state.selectedModel}</p>
            </div>
         </div>
       )}
