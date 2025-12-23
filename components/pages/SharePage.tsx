@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { UserPlus, Shield, User, LogOut } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 const SharePage: React.FC = () => {
   const { state, lang } = useInventory();

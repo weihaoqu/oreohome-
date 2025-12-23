@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -15,6 +25,8 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-color: #fce7f3;
+  overscroll-behavior: none;
+  touch-action: pan-y;
 }
 
 code {
@@ -35,4 +47,14 @@ code {
 
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
+}
+
+@layer components {
+  .hk-button-primary {
+    @apply px-4 py-3 bg-gradient-to-r from-pink-400 to-pink-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all;
+  }
+  
+  .hk-card {
+    @apply bg-white/70 rounded-lg shadow-md p-4 border-2 border-pink-200;
+  }
 }

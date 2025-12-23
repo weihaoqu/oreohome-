@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Camera, X, Sparkles, Plus, Minus, Trash2, Heart, LayoutGrid, ListPlus, CheckCircle2, Info, Upload, Image as ImageIcon, Settings2 } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 import { recognizeImage } from '@/lib/api';
 
 interface DetectedItem {

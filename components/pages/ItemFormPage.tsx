@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Save, Sparkles, MapPin, Plus, Heart, Mic, Camera, X, Upload, AlertCircle, Loader2, ListChecks, CheckCircle2, Trash2, Zap, Settings2, Info } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 import { recognizeAudio, recognizeImage } from '@/lib/api';
-import { AIModel } from '../types';
+import { AIModel } from '@/types';
 
 interface AIDraft {
   id: string;
@@ -291,7 +291,7 @@ const ItemFormPage: React.FC<ItemFormPageProps> = ({ editId }) => {
   return (
     <div className="max-w-3xl mx-auto pb-12 px-4 space-y-8">
       <header className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-50">
+        <button onClick={() => router.back()} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-50">
           <ChevronLeft size={24} />
         </button>
         <h1 className="text-2xl font-black text-pink-600">{isEdit ? t('editItem', lang) : t('addItem', lang)}</h1>
@@ -552,7 +552,7 @@ const ItemFormPage: React.FC<ItemFormPageProps> = ({ editId }) => {
         </div>
 
         <div className="flex gap-4 pt-6">
-          <button type="button" onClick={() => navigate(-1)} className="flex-1 px-6 py-4 border-2 border-pink-50 text-pink-300 rounded-2xl font-black">{t('cancel', lang)}</button>
+          <button type="button" onClick={() => router.back()} className="flex-1 px-6 py-4 border-2 border-pink-50 text-pink-300 rounded-2xl font-black">{t('cancel', lang)}</button>
           <button type="submit" className="flex-1 px-6 py-4 hk-button-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl shadow-pink-200">
             <Heart size={20} fill="currentColor" />
             {drafts.length > 0 ? (lang === 'zh' ? '添加并继续' : 'Add & Next') : t('save', lang)}

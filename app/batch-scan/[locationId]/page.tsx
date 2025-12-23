@@ -2,7 +2,7 @@
 
 import { InventoryProvider } from '@/context/InventoryContext';
 import Layout from '@/components/Layout';
-import BatchScanPage from '@/pages/BatchScanPage';
+import BatchScanPage from '@/components/pages/BatchScanPage';
 import { use } from 'react';
 
 export default function BatchScan({ params }: { params: Promise<{ locationId: string }> }) {

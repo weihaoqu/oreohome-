@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Save, MapPin, Heart, Camera, X, RotateCcw, Upload, Image as ImageIcon } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 interface LocationFormPageProps {
   editId?: string;
@@ -96,7 +96,7 @@ const LocationFormPage: React.FC<LocationFormPageProps> = ({ editId }) => {
     if (!formData.name.trim()) return;
 
     if (isEdit) {
-      updateLocation(id!, formData);
+      updateLocation(editId!, formData);
       router.push(`/location/${editId}`);
     } else {
       addLocation(formData);

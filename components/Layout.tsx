@@ -4,8 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, Users, Globe, Heart, Sparkles, Image as ImageIcon, ClipboardList } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { lang, setLang } = useInventory();

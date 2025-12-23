@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { Search, MapPin, Package, ChevronRight, Camera, Target, X } from 'lucide-react';
 import Link from 'next/link';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 const SearchPage: React.FC = () => {
   const { state, lang } = useInventory();
@@ -78,7 +78,7 @@ const SearchPage: React.FC = () => {
 
               <div className="flex items-center gap-4">
                 <Link 
-                  to={`/location/${item.locationId}`}
+                  href={`/location/${item.locationId}`}
                   className="px-6 py-3 bg-pink-50 text-pink-500 rounded-2xl font-black flex items-center gap-2 hover:bg-pink-100 transition-all group-hover:translate-x-1"
                 >
                   {t('preciseLocation', lang)}

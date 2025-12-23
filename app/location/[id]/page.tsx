@@ -2,7 +2,7 @@
 
 import { InventoryProvider } from '@/context/InventoryContext';
 import Layout from '@/components/Layout';
-import LocationDetailPage from '@/pages/LocationDetailPage';
+import LocationDetailPage from '@/components/pages/LocationDetailPage';
 import { use } from 'react';
 
 export default function LocationDetail({ params }: { params: Promise<{ id: string }> }) {

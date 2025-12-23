@@ -3,8 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Plus, Package, MapPin, ChevronRight, Activity, Heart } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 const HomePage: React.FC = () => {
   const { state, lang } = useInventory();

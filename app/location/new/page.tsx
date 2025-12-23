@@ -2,7 +2,7 @@
 
 import { InventoryProvider } from '@/context/InventoryContext';
 import Layout from '@/components/Layout';
-import LocationFormPage from '@/pages/LocationFormPage';
+import LocationFormPage from '@/components/pages/LocationFormPage';
 
 export default function NewLocation() {
   return (

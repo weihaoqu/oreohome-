@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { Sparkles, MapPin, Package, ChevronRight, LayoutGrid, Heart } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 const VisualSummaryPage: React.FC = () => {
   const { state, lang } = useInventory();

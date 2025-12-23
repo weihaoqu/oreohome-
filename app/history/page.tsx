@@ -2,7 +2,7 @@
 
 import { InventoryProvider } from '@/context/InventoryContext';
 import Layout from '@/components/Layout';
-import PromptHistoryPage from '@/pages/PromptHistoryPage';
+import PromptHistoryPage from '@/components/pages/PromptHistoryPage';
 
 export default function History() {
   return (

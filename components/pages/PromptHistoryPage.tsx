@@ -1,14 +1,15 @@
+'use client';
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, Trash2, Zap, Sparkles, Camera, Mic, Clock, Cpu, MessageSquare, Terminal } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
-import { t } from '../translations';
+import { useInventory } from '@/context/InventoryContext';
+import { t } from '@/translations';
 
 type Tab = 'app' | 'dev';
 
 const PromptHistoryPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { state, lang, clearPromptHistory } = useInventory();
   const [activeTab, setActiveTab] = useState<Tab>('app');
 
@@ -25,7 +26,7 @@ const PromptHistoryPage: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 pb-12 px-4">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
+          <button onClick={() => router.back()} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-2xl font-black text-pink-600 bow-decoration">{t('promptHistory', lang)}</h1>
