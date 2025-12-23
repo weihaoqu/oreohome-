@@ -1,16 +1,20 @@
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, Save, MapPin, Heart, Camera, X, RotateCcw, Upload, Image as ImageIcon } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 
-const LocationFormPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+interface LocationFormPageProps {
+  editId?: string;
+}
+
+const LocationFormPage: React.FC<LocationFormPageProps> = ({ editId }) => {
+  const router = useRouter();
   const { state, lang, addLocation, updateLocation } = useInventory();
 
-  const isEdit = !!id;
+  const isEdit = !!editId;
   const [formData, setFormData] = useState<{name: string, description: string, photoUrl?: string}>({
     name: '',
     description: '',
@@ -32,7 +36,7 @@ const LocationFormPage: React.FC = () => {
 
   useEffect(() => {
     if (isEdit) {
-      const location = state.locations.find(l => l.id === id);
+      const location = state.locations.find(l => l.id === editId);
       if (location) {
         setFormData({
           name: location.name,
@@ -41,7 +45,7 @@ const LocationFormPage: React.FC = () => {
         });
       }
     }
-  }, [id, isEdit, state.locations]);
+  }, [editId, isEdit, state.locations]);
 
   const handleStartCamera = async () => {
     setShowCamera(true);
@@ -93,17 +97,17 @@ const LocationFormPage: React.FC = () => {
 
     if (isEdit) {
       updateLocation(id!, formData);
-      navigate(`/location/${id}`);
+      router.push(`/location/${editId}`);
     } else {
       addLocation(formData);
-      navigate('/');
+      router.push('/');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto pb-10">
       <header className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
+        <button onClick={() => router.back()} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
           <ChevronLeft size={24} />
         </button>
         <h1 className="text-2xl font-black text-pink-600">
@@ -212,7 +216,7 @@ const LocationFormPage: React.FC = () => {
         <div className="flex gap-4 pt-4">
           <button 
             type="button" 
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="flex-1 px-6 py-4 border-2 border-pink-50 text-pink-300 rounded-2xl font-black hover:bg-pink-50 transition-all"
           >
             {t('cancel', lang)}

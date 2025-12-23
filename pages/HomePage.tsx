@@ -1,6 +1,7 @@
+'use client';
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Plus, Package, MapPin, ChevronRight, Activity, Heart } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
@@ -16,7 +17,7 @@ const HomePage: React.FC = () => {
           <p className="text-pink-400 font-medium mt-1">{t('totalItems', lang)}: {state.items.length}</p>
         </div>
         <Link 
-          to="/location/new" 
+          href="/location/new" 
           className="hk-button-primary px-6 py-3 rounded-full flex items-center gap-2 font-bold transition-all"
         >
           <Plus size={22} />
@@ -68,7 +69,7 @@ const HomePage: React.FC = () => {
             return (
               <Link 
                 key={location.id} 
-                to={`/location/${location.id}`}
+                href={`/location/${location.id}`}
                 className="group hk-card p-5 flex items-center justify-between"
               >
                 <div className="space-y-1">

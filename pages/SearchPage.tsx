@@ -1,7 +1,8 @@
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { Search, MapPin, Package, ChevronRight, Camera, Target, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 

@@ -31,6 +31,7 @@ export interface InventoryItem {
   containerId?: string;
   updatedAt: number;
   tags: string[];
+  photoUrl?: string;  // 物品图片
 }
 
 export interface PromptHistoryEntry {

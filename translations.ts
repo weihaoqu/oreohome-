@@ -3,7 +3,7 @@ import { Language } from './types';
 
 export const translations = {
   en: {
-    appName: "HomeSync",
+    appName: 'OreO Everything',
     home: "Home",
     search: "Search",
     share: "Share",
@@ -80,7 +80,7 @@ export const translations = {
     devStep: "Development Step"
   },
   zh: {
-    appName: "家存",
+    appName: "OreO 啥都有",
     home: "首页",
     search: "搜索",
     share: "共享",

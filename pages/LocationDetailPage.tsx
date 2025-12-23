@@ -1,14 +1,19 @@
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Plus, Package, Minus, Trash2, Edit, ChevronLeft, LayoutGrid, Camera, X, ScanSearch } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
 
-const LocationDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface LocationDetailPageProps {
+  locationId: string;
+}
+
+const LocationDetailPage: React.FC<LocationDetailPageProps> = ({ locationId }) => {
   const { state, lang, adjustQuantity, deleteItem, addContainer, updateContainer } = useInventory();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showAddContainer, setShowAddContainer] = useState(false);
   const [newContainerName, setNewContainerName] = useState('');
   const [showCamera, setShowCamera] = useState(false);
@@ -16,9 +21,9 @@ const LocationDetailPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentStreamRef = useRef<MediaStream | null>(null);
 
-  const location = state.locations.find(l => l.id === id);
-  const items = state.items.filter(i => i.locationId === id);
-  const containers = state.containers.filter(c => c.locationId === id);
+  const location = state.locations.find(l => l.id === locationId);
+  const items = state.items.filter(i => i.locationId === locationId);
+  const containers = state.containers.filter(c => c.locationId === locationId);
 
   useEffect(() => {
     return () => {
@@ -33,7 +38,7 @@ const LocationDetailPage: React.FC = () => {
   const handleAddContainer = (e: React.FormEvent) => {
     e.preventDefault();
     if (newContainerName.trim()) {
-      addContainer({ name: newContainerName.trim(), locationId: id! });
+      addContainer({ name: newContainerName.trim(), locationId: locationId! });
       setNewContainerName('');
       setShowAddContainer(false);
     }
@@ -79,7 +84,7 @@ const LocationDetailPage: React.FC = () => {
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
+          <button onClick={() => router.push('/')} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
             <ChevronLeft size={24} />
           </button>
           <div className="flex items-center gap-3">
@@ -94,21 +99,21 @@ const LocationDetailPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Link 
-            to={`/batch-scan/${id}`}
+            href={`/batch-scan/${locationId}`}
             className="p-3 bg-pink-100 text-pink-500 hover:bg-pink-200 rounded-full shadow-sm transition-all"
             title={t('batchScan', lang)}
           >
             <ScanSearch size={22} />
           </Link>
           <Link 
-            to={`/item/new?locationId=${id}`}
+            href={`/item/new?locationId=${locationId}`}
             className="flex-1 sm:flex-none hk-button-primary px-6 py-2.5 rounded-full flex items-center justify-center gap-2 font-bold shadow-sm"
           >
             <Plus size={20} />
             {t('addItem', lang)}
           </Link>
           <Link 
-            to={`/location/edit/${id}`}
+            href={`/location/edit/${locationId}`}
             className="p-3 bg-white border border-pink-100 hover:bg-pink-50 rounded-full text-pink-400 shadow-sm transition-all"
           >
             <Edit size={20} />
@@ -198,10 +203,20 @@ const LocationDetailPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {items.map(item => (
-            <div key={item.id} className="hk-card p-4 flex items-center justify-between">
-              <div className="flex-1">
+            <div key={item.id} className="hk-card p-4 flex items-center justify-between gap-4">
+              {/* 物品缩略图 */}
+              {item.photoUrl && (
+                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-pink-100 flex-shrink-0">
+                  <img 
+                    src={item.photoUrl} 
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-black text-slate-700 text-lg">{item.name}</span>
+                  <span className="font-black text-slate-700 text-lg truncate">{item.name}</span>
                   {item.containerId && (
                     <span className="text-[10px] bg-pink-50 text-pink-500 px-2 py-1 rounded-full font-black uppercase border border-pink-100">
                       {state.containers.find(c => c.id === item.containerId)?.name}
@@ -225,7 +240,7 @@ const LocationDetailPage: React.FC = () => {
                 </div>
                 
                 <div className="flex gap-1">
-                  <Link to={`/item/edit/${item.id}`} className="p-2 text-pink-200 hover:text-pink-500 transition-all">
+                  <Link href={`/item/edit/${item.id}`} className="p-2 text-pink-200 hover:text-pink-500 transition-all">
                     <Edit size={18} />
                   </Link>
                   <button onClick={() => { if(confirm('Delete item?')) deleteItem(item.id) }} className="p-2 text-pink-200 hover:text-rose-500 transition-all">

@@ -1,10 +1,11 @@
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, Camera, X, Sparkles, Plus, Minus, Trash2, Heart, LayoutGrid, ListPlus, CheckCircle2, Info, Upload, Image as ImageIcon, Settings2 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
-import { GoogleGenAI, Type } from "@google/genai";
+import { recognizeImage } from '@/lib/api';
 
 interface DetectedItem {
   tempId: string;
@@ -12,11 +13,15 @@ interface DetectedItem {
   quantity: number;
   unit: string;
   containerId?: string;
+  photoUrl?: string;  // 批量扫描时使用扫描图片作为缩略图
 }
 
-const BatchScanPage: React.FC = () => {
-  const { locationId } = useParams<{ locationId: string }>();
-  const navigate = useNavigate();
+interface BatchScanPageProps {
+  locationId: string;
+}
+
+const BatchScanPage: React.FC<BatchScanPageProps> = ({ locationId }) => {
+  const router = useRouter();
   const { state, lang, addItem, setSelectedModel } = useInventory();
 
   const [showCamera, setShowCamera] = useState(false);
@@ -86,10 +91,8 @@ const BatchScanPage: React.FC = () => {
 
   const processImage = async (dataUrl: string) => {
     setLoading(true);
-    const base64Image = dataUrl.split(',')[1];
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const currentModel = state.selectedModel;
       
       const prompt = `你是一个极度细致的家庭仓储管理员。请识别图片中所有的物品。
@@ -105,36 +108,16 @@ const BatchScanPage: React.FC = () => {
       "quantity" (number: 数量), 
       "unit" (string: 单位)。`;
 
-      const response = await ai.models.generateContent({
-        model: currentModel,
-        contents: [
-          { text: prompt },
-          { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                item: { type: Type.STRING },
-                quantity: { type: Type.NUMBER },
-                unit: { type: Type.STRING }
-              },
-              required: ["item", "quantity", "unit"]
-            }
-          }
-        }
-      });
-
-      const detected = JSON.parse(response.text);
-      setItems(detected.map((d: any) => ({
+      const result = await recognizeImage(dataUrl, currentModel, 50, prompt);
+      
+      // 将扫描图片作为所有识别物品的缩略图
+      setItems(result.items.map((d: any) => ({
         tempId: Math.random().toString(36).substr(2, 9),
         name: d.item,
         quantity: d.quantity,
         unit: d.unit || (lang === 'en' ? 'pcs' : '个'),
-        containerId: globalContainerId
+        containerId: globalContainerId,
+        photoUrl: dataUrl  // 保存扫描图片
       })));
     } catch (err) {
       console.error("AI识别错误:", err);
@@ -176,17 +159,18 @@ const BatchScanPage: React.FC = () => {
         unit: item.unit,
         locationId: locationId!,
         containerId: item.containerId,
-        tags: []
+        tags: [],
+        photoUrl: item.photoUrl  // 保存图片
       });
     });
-    navigate(`/location/${locationId}`);
+    router.push(`/location/${locationId}`);
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-40">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
+          <button onClick={() => router.back()} className="w-10 h-10 bg-white text-pink-400 hover:bg-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-100 transition-all">
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-2xl font-black text-pink-600">{t('batchScan', lang)}</h1>
@@ -347,6 +331,16 @@ const BatchScanPage: React.FC = () => {
               <div key={item.tempId} className="hk-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-pink-400 hover:shadow-xl transition-all relative">
                 <div className="flex-1 space-y-4">
                   <div className="flex items-start gap-4">
+                    {/* 物品缩略图 */}
+                    {item.photoUrl && (
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-pink-100 flex-shrink-0">
+                        <img 
+                          src={item.photoUrl} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center text-sm font-black border border-pink-100 flex-shrink-0 mt-1">
                       {index + 1}
                     </div>

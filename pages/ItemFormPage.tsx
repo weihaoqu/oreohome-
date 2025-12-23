@@ -1,10 +1,12 @@
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { ChevronLeft, Save, Sparkles, MapPin, Plus, Heart, Mic, Camera, X, Upload, AlertCircle, Loader2, ListChecks, CheckCircle2, Trash2, Zap, Settings2, Info } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { t } from '../translations';
-import { GoogleGenAI, Type } from "@google/genai";
+import { recognizeAudio, recognizeImage } from '@/lib/api';
 import { AIModel } from '../types';
 
 interface AIDraft {
@@ -15,13 +17,16 @@ interface AIDraft {
   tags: string[];
 }
 
-const ItemFormPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+interface ItemFormPageProps {
+  editId?: string;
+}
+
+const ItemFormPage: React.FC<ItemFormPageProps> = ({ editId }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { state, lang, addItem, updateItem, setSelectedModel, addPromptHistory } = useInventory();
 
-  const isEdit = !!id;
+  const isEdit = !!editId;
   const initialLocation = searchParams.get('locationId') || (state.locations[0]?.id || '');
 
   const [formData, setFormData] = useState({
@@ -30,7 +35,8 @@ const ItemFormPage: React.FC = () => {
     unit: lang === 'en' ? 'pcs' : '个',
     locationId: initialLocation,
     containerId: '',
-    tags: [] as string[]
+    tags: [] as string[],
+    photoUrl: ''
   });
 
   const [maxItems, setMaxItems] = useState(5);
@@ -38,6 +44,7 @@ const ItemFormPage: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [cameraMode, setCameraMode] = useState<'item-photo' | 'ai-recognize'>('ai-recognize'); // 相机模式
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -54,7 +61,7 @@ const ItemFormPage: React.FC = () => {
 
   useEffect(() => {
     if (isEdit) {
-      const item = state.items.find(i => i.id === id);
+      const item = state.items.find(i => i.id === editId);
       if (item) {
         setFormData({
           name: item.name,
@@ -62,11 +69,12 @@ const ItemFormPage: React.FC = () => {
           unit: item.unit,
           locationId: item.locationId,
           containerId: item.containerId || '',
-          tags: item.tags
+          tags: item.tags,
+          photoUrl: item.photoUrl || ''
         });
       }
     }
-  }, [id, isEdit, state.items]);
+  }, [editId, isEdit, state.items]);
 
   const stopCurrentStream = () => {
     if (currentStreamRef.current) {
@@ -110,7 +118,7 @@ const ItemFormPage: React.FC = () => {
     });
     const currentLocId = formData.locationId;
     setDrafts([]);
-    navigate(`/location/${currentLocId}`);
+    router.push(`/location/${currentLocId}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -118,14 +126,14 @@ const ItemFormPage: React.FC = () => {
     if (!formData.locationId) return;
     
     if (isEdit) {
-      updateItem(id!, formData);
-      navigate(`/location/${formData.locationId}`);
+      updateItem(editId!, formData);
+      router.push(`/location/${formData.locationId}`);
     } else {
       addItem(formData);
       if (drafts.length > 0) {
         setFormData(prev => ({ ...prev, name: '' }));
       } else {
-        navigate(`/location/${formData.locationId}`);
+        router.push(`/location/${formData.locationId}`);
       }
     }
   };
@@ -175,38 +183,21 @@ const ItemFormPage: React.FC = () => {
   const processMultipleAI = async (base64: string, mimeType: string, type: 'audio' | 'image') => {
     setAiLoading(true);
     setErrorMsg(null);
-    const promptText = `You are a home inventory assistant. Identify up to ${maxItems} items from this ${type}. Return JSON array.`;
+    const promptText = `You are a home inventory assistant. Identify up to ${maxItems} items from this ${type}. Return JSON array with: "item" (name), "quantity" (number), "unit" (string), "tags" (array of strings, optional).`;
     
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const currentModel = state.selectedModel;
       
-      const response = await ai.models.generateContent({
-        model: currentModel,
-        contents: [
-          { text: promptText },
-          { inlineData: { mimeType, data: base64 } }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                item: { type: Type.STRING },
-                quantity: { type: Type.NUMBER },
-                unit: { type: Type.STRING },
-                tags: { type: Type.ARRAY, items: { type: Type.STRING } }
-              },
-              required: ["item", "quantity", "unit"]
-            }
-          }
-        }
-      });
+      let result;
+      if (type === 'audio') {
+        const audioData = `data:${mimeType};base64,${base64}`;
+        result = await recognizeAudio(audioData, mimeType, currentModel, maxItems, promptText);
+      } else {
+        const imageData = `data:${mimeType};base64,${base64}`;
+        result = await recognizeImage(imageData, currentModel, maxItems, promptText);
+      }
 
-      const results = JSON.parse(response.text);
-      const newDrafts: AIDraft[] = results.map((r: any) => ({
+      const newDrafts: AIDraft[] = result.items.map((r: any) => ({
         id: Math.random().toString(36).substr(2, 9),
         name: r.item,
         quantity: r.quantity,
@@ -254,6 +245,7 @@ const ItemFormPage: React.FC = () => {
 
   const handlePhotoAdd = async () => {
     if (!showCamera) {
+      setCameraMode('ai-recognize');
       setShowCamera(true);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -273,7 +265,26 @@ const ItemFormPage: React.FC = () => {
       const dataUrl = canvas.toDataURL('image/jpeg');
       stopCurrentStream();
       setShowCamera(false);
-      processMultipleAI(dataUrl.split(',')[1], 'image/jpeg', 'image');
+      
+      if (cameraMode === 'item-photo') {
+        // 直接保存为物品图片
+        setFormData(prev => ({ ...prev, photoUrl: dataUrl }));
+      } else {
+        // AI 识别模式
+        processMultipleAI(dataUrl.split(',')[1], 'image/jpeg', 'image');
+      }
+    }
+  };
+
+  const handleTakeItemPhoto = async () => {
+    setCameraMode('item-photo');
+    setShowCamera(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      currentStreamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch (err) {
+      setShowCamera(false);
     }
   };
 
@@ -454,6 +465,39 @@ const ItemFormPage: React.FC = () => {
             placeholder={lang === 'zh' ? '输入产品名称' : 'e.g. Shampoo'}
             required
           />
+        </div>
+
+        {/* 物品图片区域 */}
+        <div className="space-y-2">
+          <label className="text-sm font-black text-pink-400 uppercase tracking-widest">{lang === 'zh' ? '物品图片' : 'Item Photo'}</label>
+          <div className="flex items-center gap-4">
+            {formData.photoUrl && (
+              <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-pink-100 flex-shrink-0">
+                <img 
+                  src={formData.photoUrl} 
+                  alt={formData.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleTakeItemPhoto}
+              className="flex items-center gap-2 px-6 py-3 bg-pink-50 text-pink-500 rounded-2xl font-bold hover:bg-pink-100 transition-all border-2 border-pink-100"
+            >
+              <Camera size={20} />
+              {formData.photoUrl ? (lang === 'zh' ? '重新拍照' : 'Retake Photo') : (lang === 'zh' ? '拍照' : 'Take Photo')}
+            </button>
+            {formData.photoUrl && (
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, photoUrl: '' })}
+                className="p-3 text-pink-300 hover:text-rose-500 transition-all"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

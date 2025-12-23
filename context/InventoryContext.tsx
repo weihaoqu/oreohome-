@@ -1,3 +1,4 @@
+'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { InventoryState, Location, Container, InventoryItem, User, Language, AIModel, PromptHistoryEntry, DevPrompt } from '../types';
@@ -63,19 +64,24 @@ const INITIAL_DEV_PROMPTS: DevPrompt[] = [
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('homesync_lang');
-    return (saved as Language) || 'zh';
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('homesync_lang');
+      return (saved as Language) || 'zh';
+    }
+    return 'zh';
   });
 
   const [state, setState] = useState<InventoryState>(() => {
-    const saved = localStorage.getItem('homesync_state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (!parsed.selectedModel) parsed.selectedModel = 'gemini-3-flash-preview';
-      if (!parsed.promptHistory) parsed.promptHistory = [];
-      // 始终同步最完整的开发历史记录
-      parsed.developmentPrompts = INITIAL_DEV_PROMPTS;
-      return parsed;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('homesync_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.selectedModel) parsed.selectedModel = 'gemini-3-flash-preview';
+        if (!parsed.promptHistory) parsed.promptHistory = [];
+        // 始终同步最完整的开发历史记录
+        parsed.developmentPrompts = INITIAL_DEV_PROMPTS;
+        return parsed;
+      }
     }
     return {
       locations: [
@@ -102,11 +108,15 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   useEffect(() => {
-    localStorage.setItem('homesync_state', JSON.stringify(state));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('homesync_state', JSON.stringify(state));
+    }
   }, [state]);
 
   useEffect(() => {
-    localStorage.setItem('homesync_lang', lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('homesync_lang', lang);
+    }
   }, [lang]);
 
   const setSelectedModel = (m: AIModel) => {
